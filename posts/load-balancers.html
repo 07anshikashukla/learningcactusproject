@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Load Balancers Really Work</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/logo.png">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+    <div class="page">
+        <header class="site-header">
+            <a href="../index.html">
+                <img src="../images/logo.png" class="logo" />
+            </a>
+            <h1>Learning Cactus</h1>
+        </header>
+
+        <main>
+            <article>
+                <h2>How Load Balancers Really Work (Without Cloud Buzzwords)</h2>
+                <span class="origin-date">January 5, 2026</span>
+
+                <p>When people hear load balancer, they often imagine a magical box that “handles traffic at scale”.
+                    In reality, a load balancer is much simpler and much more powerful than that.</p>
+                <p>This post explains what load balancers actually do, why they exist, and how they behave under the
+                    hood, without mentioning any specific cloud provider or tool.</p>
+                <hr>
+                <p><strong>The Core Problem</strong></p>
+                <p>Imagine you run a website on a single server.</p>
+                <p>At first:</p>
+                <ul>
+                    <li>Everything works</li>
+                    <li>Traffic is low</li>
+                    <li>Life is good</li>
+                </ul>
+                <p>Then traffic grows:</p>
+                <ul>
+                    <li>Requests pile up</li>
+                    <li>Responses slow down</li>
+                    <li>The server crashes</li>
+                </ul>
+                <p>You add a second server.</p>
+                <p>Now the real question appears: </p>
+                <blockquote>
+                <strong> How does a user know which server to talk to?</strong>
+                </blockquote>
+                <p>Users need <strong>one stable address.</strong><br>Servers need <strong>flexibility to
+                        scale.</strong></p>
+                <p>This mismatch is why load balancers exist.</p>
+                <hr>
+                <p><strong>What a Load Balancer Is</strong></p>
+                <p>A load balancer is:</p>
+                <blockquote>
+                    <p>A stable network endpoint that receives incoming traffic and forwards each request to one of many
+                        backend servers.</p>
+                </blockquote>
+                <p>Key point: </p>
+                <ul>
+                    <li>Clients never talk to backend servers directly</li>
+                    <li>Backend servers can change freely
+                        The load balancer acts as a <strong>traffic switch.</strong></li>
+                </ul>
+                <p>Clients want:
+                    <pre><code>ONE address</code></pre>
+                </p>
+                <p>Systems want:
+                    <pre><code>MANY servers</code></pre>
+                </p>
+                <p>The load balancer bridges this contradiction.</p>
+                <hr>
+                <p><strong>The Core Clarification</strong></p>
+                <blockquote>
+                    <p><strong>A single load balancer distributes traffic across multiple instances of the same service,
+                            not different microservices.</strong></p>
+                </blockquote>
+                <p>This is fundamental.</p>
+                <p>A load balancer answers: </p>
+                <blockquote>
+                    <p>“Which replica of this service should handle this request?”</p>
+                </blockquote>
+                <p>Not: </p>
+                <blockquote>
+                    <p>“Which service should handle this request?”</p>
+                </blockquote>
+                <p>Each microservice has its own set of replicas.</p>
+                <pre><code>Client
+→ LB (user-service) → user<span class="hljs-number">-1</span>
+                    → user<span class="hljs-number">-2</span>
+
+→ LB (payment-service) → pay<span class="hljs-number">-1</span>
+                       → pay<span class="hljs-number">-2</span>
+</code></pre>
+                <p><strong><em>One LB per service boundary</em></strong>
+                    (or one routing layer in front, like ingress).</p>
+                <p>Load balancers assume: </p>
+                <blockquote>
+                    <p>“All targets are functionally identical.”</p>
+                </blockquote>
+                <hr>
+                <p><strong>The Core Question</strong></p>
+                <blockquote>
+                    <p><strong>When a new server is created dynamically, how does a load balancer discover it and start
+                            sending traffic to it?</strong></p>
+                </blockquote>
+                <p>This sounds magical — but it’s not.</p>
+                <hr>
+                <p><strong>High-Level Truth</strong></p>
+                <p>A load balancer does not “find” servers on its own.</p>
+                <p>Instead: </p>
+                <blockquote>
+                    <p><strong>Some external control system explicitly tells the load balancer: “Here is a new backend.
+                            Start checking it.”</strong></p>
+                </blockquote>
+                <p>The load balancer is passive: it does not create instances, discover them, or decide when to scale.
+                    It simply routes traffic to a list of backends provided by an external control system. That is why
+                    discovery is orchestrated, not automatic.</p>
+                <hr>
+                <p><strong>Behind the Scenes: The Three Actors</strong></p>
+                <p>There are conceptually <strong>three logical components</strong> involved:</p>
+                <pre><code><span class="hljs-string">[ Control Plane ]</span>
+       |
+       v
+<span class="hljs-string">[ Load Balancer ]</span> &lt;——&gt; <span class="hljs-string">[ Backend Servers ]</span>
+</code></pre>
+                <p>Let’s break their roles.</p>
+                <hr>
+                <p><strong><em>1️. The Backend Server (New Instance)</em></strong></p>
+                <p>When a new instance is created it gets assigned, </p>
+                <ul>
+                    <li>An IP address</li>
+                    <li>Network connectivity<br>⚠️ It does NOT announce itself.<br>⚠️ It does NOT talk to the load
+                        balancer.</li>
+                </ul>
+                <p>Servers are kind of dumb workers.</p>
+                <p><strong><em>2. The Control Plane (The Brain)</em></strong></p>
+                <p>This is the <strong>most important and least understood piece</strong>.</p>
+                <p>The control plane: </p>
+                <ul>
+                    <li>Knows <strong>desired state</strong></li>
+                    <li>Knows <strong>current state</strong></li>
+                    <li>Reconciles differences</li>
+                </ul>
+                <p>Examples (conceptually): </p>
+                <ul>
+                    <li>Auto-scaler</li>
+                    <li>Orchestrator</li>
+                    <li>Cluster manager</li>
+                </ul>
+                <p>Its job: </p>
+                <blockquote>
+                    <p>“I want N healthy servers behind this service. Let&#39;s make it happen.”</p>
+                </blockquote>
+                <hr>
+                <p><strong><em>3. The Load Balancer (The Traffic Switch)</em></strong></p>
+                <p>The load balancer: </p>
+                <ul>
+                    <li>Maintains a routing table of registered, healthy, and reachable backends (servers) and sends
+                    traffic to them</li>
+                </ul>
+                <hr>
+                <p><strong>Step-by-Step: What REALLY Happens</strong></p>
+                <p>Let’s walk through a real sequence.</p>
+                <p><strong><em>Step 1: Scaling Decision Is Made</em></strong></p>
+                <p>The control plane decides:</p>
+                <pre><code>Current <span class="hljs-string">servers:</span> <span class="hljs-number">2</span>
+Desired <span class="hljs-string">servers:</span> <span class="hljs-number">3</span>
+→ Create <span class="hljs-number">1</span> more server
+</code></pre>
+                <p><strong><em>Step 2: New Server Is Created</em></strong></p>
+                <ul>
+                    <li>VM/container is started</li>
+                    <li>IP is assigned</li>
+                    <li>App process starts</li>
+                </ul>
+                <p>At this moment, Load balancer knows <strong>NOTHING</strong> about the new instance.</p>
+                <p><strong><em>Step 3: Control Plane Registers the Server</em></strong></p>
+                <p>The control plane now performs an explicit action of adding the newly created server to the internal
+                    list (often called a service registry or target list) of available healthy servers: </p>
+                <pre><code class="lang-yaml"><span class="hljs-selector-tag">Register</span> <span class="hljs-selector-tag">backend</span>:
+    <span class="hljs-selector-tag">IP</span>: 10<span class="hljs-selector-class">.0</span><span class="hljs-selector-class">.2</span><span class="hljs-selector-class">.15</span>
+    <span class="hljs-selector-tag">Port</span>: 80
+    <span class="hljs-selector-tag">Service</span>: <span class="hljs-selector-tag">backend-service</span>
+</code></pre>
+                <p>This could be: </p>
+                <ul>
+                    <li>An API call</li>
+                    <li>A config update</li>
+                    <li>A dynamic config push</li>
+                </ul>
+                <p>This service registry or target list is maintained by the control plane, something like a registry
+                    from where the LB can fetch or know about the health of the server.</p>
+                <p><strong><em>Step 4: Load Balancer Starts Health Checks</em></strong></p>
+                <p>A load balancer must know which backend servers are alive and able to handle requests.
+                    To do this, it continuously verifies the health of every registered backend.</p>
+                <p>After a server is registered, the load balancer begins periodic probing.
+                    This process is called a <strong>health check</strong>.</p>
+                <p>Health checks are configured for every service, so that the existing or newly created instances for a
+                    specific service follow a common
+                    health check rule.</p>
+                <p>Most commonly, a health check is an HTTP or HTTPS request (for example, GET /health), sent at regular
+                    intervals.</p>
+                <pre><code><span class="hljs-attribute">GET</span> /health
+</code></pre>
+                <ul>
+                    <li>Server responds a successful response (e.g., 200 OK).</li>
+                </ul>
+                <p>Only servers that consistently pass health checks are considered eligible for traffic and added to
+                    routing pool of the Load balancer.</p>
+                <p><strong><em>Step 5: Traffic Begins Flowing</em></strong></p>
+                <p>Now and only now traffic is routed to this new server. </p>
+                <p>From client’s perspective: </p>
+                <ul>
+                    <li>Nothing changed</li>
+                    <li>Same endpoint</li>
+                    <li>Same behavior</li>
+                </ul>
+                <hr>
+                <p><strong>Summary</strong> </p>
+                <ul>
+                    <li>A load balancer provides a single stable endpoint for many backend servers. </li>
+                    <li>It distributes traffic across replicas of the same service, not different services. </li>
+                    <li>Load balancers are not responsible for registration or deregistration of servers. </li>
+                    <li>Health checks allows to determine healthy servers to which traffic can be routed.</li>
+                </ul>
+                <hr>
+                <p><strong><em>What’s Next</em></strong></p>
+                <p>This post focused on how load balancers work at a fundamental level. In upcoming posts, I plan to
+                    cover:</p>
+                <ul>
+                    <li><strong>What Is a Control Plane and Why Load Balancers Don’t Discover Servers</strong></li>
+                    <li><strong>How Auto Scaling Fits into the Bigger Picture</strong></li>
+                    <li><strong>How Ingress Controllers Route Traffic to Different Services and How They Differ from
+                            Load Balancers</strong></li>
+                </ul>
+                <p>Each post builds on the previous one, starting from fundamentals and gradually moving toward more
+                    complex system design concepts.</p>
+                <hr>
+                <p><strong><em>More posts in this series coming soon.</em></strong></p>
+
+
+                <!-- Your content continues here -->
+            </article>
+        </main>
+
+        <footer>
+            <p>© 2026 Learning Cactus</p>
+        </footer>
+    </div>
+</body>
+
+</html>
