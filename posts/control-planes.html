@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Is a Control Plane and Why Load Balancers Don’t Discover Servers</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/logo.png">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+    <div class="page">
+        <header class="site-header">
+            <a href="../index.html">
+                <img src="../images/logo.png" class="logo" />
+            </a>
+            <h1>Learning Cactus</h1>
+        </header>
+
+        <main>
+            <article>
+                <h2>What Is a Control Plane and Why Load Balancers Don’t Discover Servers</h2>
+                <span class="origin-date">January 9, 2026</span>
+                <p>When people first learn about load balancers, a very natural question comes up:</p>
+                <blockquote>
+                    <p> If new servers keep coming and going, how does the load balancer know where to send traffic?</p>
+                </blockquote>
+                <p>The intuitive (but incorrect) assumption is that the load balancer actively discovers servers.</p>
+                <p>It does not.</p>
+                <p>Understanding <strong><em>why</em></strong> leads us to one of the most important ideas in system
+                    design:
+                    the control plane.</p>
+                <hr>
+                <p><strong>Two Different Worlds: Data Plane vs Control Plane</strong></p>
+                <p>There are two different worlds defined which act behind the scenes for the control and the flow of
+                    data.</p>
+                <p><strong>1. The Data Plane (Fast, Dumb, Predictable)</strong>
+                    This world is where: </p>
+                <ul>
+                    <li>The user data flows. </li>
+                    <li>Packets are forwarded.</li>
+                    <li>Decisions need to be fast.</li>
+                    <li>Latency must be minimal.
+                        <strong>Load balancer lives in this world.</strong>
+                    </li>
+                </ul>
+                <p>It&#39;s only job is to receive request, choose a healthy target(server) and forward request to this
+                    server.</p>
+                <p><strong>2. The Control Plane (Slow, Smart, Authoritative)</strong></p>
+                <p>This world is where:</p>
+                <ul>
+                    <li>Servers or instances are created or destroyed.</li>
+                    <li>Health of the servers are evaluated.</li>
+                </ul>
+                <p>This world decides: </p>
+                <ul>
+                    <li>
+                        Which and how many servers exist.
+                    </li>
+                    <li>Which ones are healthy.</li>
+                    <li>Which ones should receive traffic.
+
+                </ul>
+
+                The control plane handles the <strong>system state</strong> and not the <strong>user
+                    traffic</strong>.
+                <hr>
+                <p><strong>Why Load Balancers don&#39;t discover servers</strong></p>
+                <p>The primary function of introducing load balancers in system design it to improve system performance,
+                    minimizing
+                    latency and containing failures.</p>
+                <p>It does not want to understand the configuration or working of a server or take up extra tasks like:
+                </p>
+                <ul>
+                    <li>Scanning the network </li>
+                    <li>Detecting new servers </li>
+                    <li>Probing every IP </li>
+                    <li>Deciding which servers are valid</li>
+                </ul>
+
+
+                <p>This would immediately result into problems like:</p>
+                <ul>
+                    <li>
+                        <p><strong>Slowness</strong> - Discovery is expensive. Traffic routing must not be slow.</p>
+                    </li>
+                    <li>
+                        <p><strong>Unreliability</strong> - Network scans can be wrong, timeouts could happen and there
+                            could be cases of
+                            partial failures.</p>
+                    </li>
+                    <li><strong>Mixed responsibilities</strong> - Traffic routing and system orchestration are very
+                        different concerns.
+                        These issues totally deviates the concept of introducing a load balancer into the system
+                        architecture.</li>
+                </ul>
+                <p>So, systems are designed with a strict rule: </p>
+                <blockquote>
+                    <p> <strong>Load balancers are passive.</strong></p>
+                    <p><strong>Discovery is orchestrated elsewhere.</strong>
+                    </p>
+                </blockquote>
+                <hr>
+                <p><strong>So, Who Tells the Load Balancer About Servers?</strong></p>
+                <p>The <strong>control plane</strong>.</p>
+                <p>Whenever something changes in the system, the control plane reacts.</p>
+                <p>Examples: </p>
+                <ul>
+                    <li>A new server is created </li>
+                    <li>A server fails health checks </li>
+                    <li>A server is terminated</li>
+                </ul>
+                <p>Scaling rules are triggered</p>
+                <p>The control plane then: </p>
+                <ul>
+                    <li>
+                        Updates the list of valid backends
+                    </li>
+                    <li>Updates the authoritative backend registry (often called a service registry or target list ),
+                        which load
+                        balancers use to update their local routing tables.
+
+                    </li>
+                </ul>
+
+
+                <p><strong>Remember</strong>, the load balancer never asks questions, it only follows instructions.</p>
+                <hr>
+                <p><strong>What the Control Plane Actually Does</strong></p>
+                <p>Conceptually, the control plane: </p>
+                <ul>
+                    <li>Decides which instances belong to a service.</li>
+                    <li>Evaluates health, readiness, and policy.</li>
+                    <li>Maintains and registers the authoritative set of eligible backends.</li>
+                </ul>
+                <p>This set lives in:</p>
+                <ul>
+                    <li>
+                        A registry
+                    </li>
+                    <li>A control data store</li>
+                    <li>A configuration source</li>
+                </ul>
+
+
+
+                <hr>
+                <p><strong>Where Does the Control Plane “Register” Servers?</strong></p>
+                <p>Conceptually, the control plane maintains an authoritative registry.</p>
+                <p>You can think of it as: </p>
+                <blockquote>
+                    <p> The single source of truth for which servers are allowed to receive traffic. </p>
+                </blockquote>
+                <p>This registry may be: </p>
+                <ul>
+                    <li>A table </li>
+                    <li>A data structure </li>
+                    <li>A config store </li>
+                    <li>An internal service
+                        The exact implementation varies, but the idea does not.</li>
+                </ul>
+                <p>The control plane: </p>
+                <ul>
+                    <li>Knows all servers for all respective services. </li>
+                    <li>Knows their state. </li>
+                    <li>Decides their eligibility. </li>
+                    <li>Reconciles differences between the current and desired state of instances for different
+                        services.</li>
+                </ul>
+                <hr>
+                <p><strong>Control Plane: A Mental Model</strong></p>
+                <p>One Control Plane: </p>
+                <ul>
+                    <li>Manages the entire system </li>
+                    <li>Knows about all services </li>
+                    <li>Enforces global rules
+
+                    </li>
+                </ul>
+                <strong>Per-Service State (Logical Isolation)</strong>
+                <p>Inside that control plane, there are separate records for each service:</p>
+                <pre><code>Control Plane
+├── user-service
+│   ├── instances
+│   ├── health policy
+│   └── scaling rules
+│
+├── payment-service
+<span class="hljs-string">|   ├── instances</span>
+<span class="hljs-string">|   ├── health policy</span>
+<span class="hljs-string">|   └── scaling rules</span>
+</code></pre>
+                <p>So:</p>
+                <ul>
+                    <li>One control plane.</li>
+                    <li>Many logical services.</li>
+                    <li>Each with independent configuration.</li>
+                </ul>
+                <hr>
+                <p><strong>Summary</strong></p>
+                <p>In this post, I explored why load balancers don’t discover backend servers on their own and why a
+                    separate control
+                    plane exists.</p>
+                <p>I initially assumed load balancers were responsible for understanding system state, but they are
+                    intentionally
+                    passive. They don’t decide when to scale or which servers should exist. They simply route
+                    traffic to
+                    a list of
+                    backends they are given and stop sending traffic when those backends become unhealthy.</p>
+                <p>The control plane owns the system’s desired state. It decides when instances are created or
+                    removed
+                    and registers
+                    which ones are valid backends for a service. Load balancers then operate purely on this declared
+                    state.</p>
+                <p>Understanding this separation made it much clearer to me how scalable systems remain predictable
+                    and
+                    manageable.</p>
+                <hr>
+                <p><strong><em>What’s Next</em></strong></p>
+                <ul>
+                    <li><strong>How Auto Scaling Fits into the Bigger Picture</strong></li>
+                    <li><strong>How Ingress Controllers Route Traffic to Different Services — and How They Differ
+                            from
+                            Load
+                            Balancers</strong></li>
+                </ul>
+                <p>
+                    Each post builds on the previous one, starting from fundamentals and gradually moving toward
+                    more complex system
+                    design concepts.</p>
+                <hr>
+                <p><strong><em>More posts in this series coming soon.</em></strong></p>
+            </article>
+        </main>
+
+        <footer>
+            <p>© 2026 Learning Cactus</p>
+        </footer>
+    </div>
+</body>
+
+</html>
