@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>How Load Balancers Really Work</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/logo.png" />
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <a href="../index.html">
+          <img src="../images/logo.png" class="logo" />
+        </a>
+        <h1>Learning Cactus</h1>
+      </header>
+
+      <main>
+        <article>
+          <h2>How Auto Scaling Fits into the Bigger Picture</h2>
+          <span class="origin-date">January 16, 2026</span>
+
+          <p>
+            So far, we have looked at two core building blocks of a scalable
+            system.
+          </p>
+          <p>
+            First, we learned that a load balancer is intentionally passive. It
+            doesn’t create servers or decide when to scale. It simply routes
+            traffic to a set of known, healthy instances.
+          </p>
+          <p>
+            Then, we explored the role of the control plane. The control plane
+            owns the system’s desired state. It decides which instances should
+            exist and registers valid backends for a service, which the load
+            balancer then uses for routing.
+          </p>
+          <p>
+            With these pieces in place, the next question naturally follows:
+            <strong
+              >how does the system decide when to add or remove servers?</strong
+            >
+          </p>
+          <hr />
+          <p><strong>What Auto-Scaling Really Is</strong></p>
+          <blockquote>
+            <p>
+              Auto-scaling is not about scaling traffic. It is about reconciling
+              desired state with observed reality.
+            </p>
+          </blockquote>
+          <p>
+            Auto-scaling lives squarely inside the
+            <strong>control plane</strong>.
+          </p>
+          <p>It:</p>
+          <ul>
+            <li>Observes signals</li>
+            <li>Makes decisions</li>
+            <li>Changes the system state</li>
+          </ul>
+          <hr />
+          <p><strong>The Problem Auto-Scaling Solves</strong></p>
+          <p>Any system or service can face two very opposing risks:</p>
+          <ul>
+            <li>
+              <strong>Too few servers</strong>: This could result in overload
+              and failures.
+            </li>
+            <li>
+              <strong>Too many servers</strong>: This could result in wasted
+              resources.
+            </li>
+          </ul>
+          <p>
+            Auto-scaling runs continuously addressing the above issues,
+            answering the question:
+          </p>
+          <blockquote>
+            <p>What should the size of this service be right now?</p>
+          </blockquote>
+          <hr />
+          <p><strong>How Auto-Scaling Acts</strong></p>
+          <p>
+            Auto-scaling acts based on signals that reflect how a service
+            behaves over time.
+          </p>
+          <p>Examples:</p>
+          <ul>
+            <li>CPU usage</li>
+            <li>Memory pressure</li>
+            <li>Request latency</li>
+            <li>Queue depth</li>
+            <li>Error rates</li>
+          </ul>
+          <hr />
+          <p><strong>Signals vs Decisions</strong></p>
+          <p>
+            One of the most important ideas in auto-scaling is the separation
+            between signals and decisions.
+          </p>
+          <p>Signals are observations. Decisions are actions.</p>
+          <p>Auto-scaling works by carefully keeping these two apart.</p>
+          <p>
+            These signals are observed, configured at the service level. The
+            decision of adding or removing servers for a service depends on
+            these inferred signals.
+          </p>
+          <hr />
+          <p><strong>Understanding Signals</strong></p>
+          <p>
+            Auto-scaling doesn’t make decisions randomly. It relies on signals,
+            observations that describe how a service behaves over time.
+          </p>
+          <p>
+            Not all signals come from the same place. In practice, auto-scaling
+            systems tend to rely on three broad categories: metrics, schedules,
+            and predictions. Each one exists to handle a different kind of
+            workload pattern.
+          </p>
+          <p>
+            <strong
+              >1. Metrics-Based Signals (Reacting to What’s Happening
+              Now):</strong
+            >
+            This is the most intuitive form of auto-scaling and usually the
+            first one people encounter.
+          </p>
+          <p>
+            Here, the system watches how busy the service is and reacts when
+            pressure builds up.
+          </p>
+          <p>Common examples of these signals include:</p>
+          <ul>
+            <li>CPU usage staying high</li>
+            <li>Memory steadily filling up</li>
+            <li>Requests taking longer to complete</li>
+            <li>Queues growing faster than they are being drained</li>
+          </ul>
+          <p>
+            A simple mental model could be a restaurant kitchen. If orders start
+            piling up and cooks are constantly busy, that’s a signal that more
+            help is needed.
+          </p>
+          <p>
+            In simple terms, sustained CPU usage above a certain threshold often
+            indicates the need for more capacity.
+          </p>
+          <p>
+            Metrics-based scaling works best when traffic is unpredictable. It
+            doesn’t assume anything about the future, it simply responds to
+            sustained pressure in the present.
+          </p>
+          <p>
+            <strong
+              >2. Scheduled Signals (Reacting to What You Already Know):</strong
+            >
+            Some traffic patterns aren’t surprising at all.
+          </p>
+          <p>For example:</p>
+          <ul>
+            <li>Traffic increases every weekday morning</li>
+            <li>Load drops sharply at night</li>
+            <li>A weekly batch job always runs at the same time</li>
+          </ul>
+          <p>
+            In these cases, waiting for metrics to rise is unnecessary. The
+            system already knows when load is coming.
+          </p>
+          <blockquote>
+            <p>
+              Scheduled signals allow capacity to be adjusted
+              <strong>ahead of time</strong>.
+            </p>
+          </blockquote>
+          <p>
+            Think of this like opening extra checkout counters before a known
+            rush hour, instead of waiting for lines to form.
+          </p>
+          <p>
+            This approach works well when traffic is
+            <strong>predictable</strong> and <strong>repeatable</strong>.
+          </p>
+          <p>
+            For example, administrators can define specific times and dates for
+            scaling actions to occur (e.g., scale up to 10 instances every
+            Monday-Friday at 9:00 AM, scale down to 2 instances at 6:00 PM).
+          </p>
+          <p>
+            <strong
+              >3. Predictive Signals (Reacting to What’s Likely to
+              Happen):</strong
+            >
+            Predictive signals sit between metrics and schedules.
+          </p>
+          <p>
+            Instead of reacting only to the present or relying on fixed times,
+            the system looks at historical behavior and asks:
+          </p>
+          <blockquote>
+            <p>Based on what usually happens, what is likely to happen next?</p>
+          </blockquote>
+          <p>For example:</p>
+          <ul>
+            <li>Traffic usually ramps up gradually before a major event</li>
+            <li>Certain days show repeating growth patterns</li>
+            <li>New instances take time to warm up</li>
+          </ul>
+          <p>
+            By learning these patterns, the system can start scaling
+            <strong>before</strong> pressure becomes visible in metrics.
+          </p>
+          <p>
+            A simple analogy is preparing food before guests arrive because past
+            experience tells you when they usually show up.
+          </p>
+          <p>
+            Predictive signals are especially useful when starting new instances
+            is slow and reacting late would cause user-visible delays.
+          </p>
+          <hr />
+          <p><strong>How an Instance Failure Becomes a Signal</strong></p>
+          <p>
+            Here we try to picture how a failing instance
+            <strong>indirectly</strong> acts as a <strong>signal</strong> and
+            present it as an example for our auto-scaling scenario.
+          </p>
+          <p>
+            <strong><em>1. Through Reduced Capacity</em></strong>
+          </p>
+          <p>When an instance stops serving traffic:</p>
+          <ul>
+            <li>Fewer instances of the service handle the same workload</li>
+            <li>Remaining instances experience higher load</li>
+          </ul>
+          <p>This turns up as:</p>
+          <ul>
+            <li>Increased CPU or memory usage</li>
+            <li>Higher latency</li>
+            <li>Longer queues</li>
+          </ul>
+          <p>Now the <strong>service-level signals change</strong>.</p>
+          <p>
+            <strong><em>2. Through Error Trends</em></strong>
+          </p>
+          <p>If failures are widespread:</p>
+          <ul>
+            <li>Like multiple instances losing DB connectivity</li>
+            <li>Error rates increasing across the service</li>
+          </ul>
+          <p>Auto-scaling doesn’t see why errors happen, it sees:</p>
+          <ul>
+            <li>Sustained degradation</li>
+            <li>Correlated failures That pattern becomes a signal.</li>
+          </ul>
+          <p>
+            <strong><em>3. Through Backlog Growth</em></strong>
+          </p>
+          <p>If traffic continues but capacity drops:</p>
+          <ul>
+            <li>Requests pile up</li>
+            <li>Queues grow</li>
+            <li>
+              Latency increases Again, this is observed over time, not per
+              request.
+            </li>
+          </ul>
+          <pre><code><span class="hljs-keyword">Instance </span>failure
+      ↓
+Capacity reduction
+      ↓
+Service-level pressure
+      ↓
+Observed signals
+      ↓
+Auto-<span class="hljs-keyword">scaling </span>decision
+</code></pre>
+          <p>
+            These above failure scenarios result in a signal after sustaining a
+            certain period of time, remember a brief spike or a single failing
+            instance will not result in signal creation.
+          </p>
+          <blockquote>
+            <p>
+              The failure itself is not the signal. The
+              <strong>impact</strong> of the failure is.
+            </p>
+          </blockquote>
+          <hr />
+          <p><strong>What Auto-Scaling Does Not Do</strong></p>
+          <ul>
+            <li>React to a single failing instance</li>
+            <li>Inspect readiness endpoints</li>
+            <li>Diagnose root causes</li>
+            <li>Replace unhealthy instances directly</li>
+          </ul>
+          <p>
+            These responsibilities belong to other parts of the control plane.
+          </p>
+          <hr />
+          <p><strong>How Auto-Scaling Updates the Control Plane</strong></p>
+          <p>
+            Auto-scaling does not add or remove servers directly. Instead, it
+            works by updating the desired state managed by the control plane.
+          </p>
+          <p>This distinction is important.</p>
+          <p>
+            Auto-scaling observes signals and decides whether the current size
+            of a service is too small, too large, or appropriate. When it
+            decides that a change is needed, it expresses that decision as a
+            change in intent, not as an immediate action.
+          </p>
+          <p>
+            <strong><em>From Observation to Intent</em></strong>
+          </p>
+          <p>
+            Once sustained signals indicate pressure or underutilization,
+            auto-scaling updates the control plane with a new desired service
+            size.
+          </p>
+          <p>For example:</p>
+          <ul>
+            <li>This service should run with 6 instances instead of 4</li>
+            <li>This service can safely shrink from 10 instances to 7</li>
+          </ul>
+          <p>
+            At this point, no servers have been created or removed yet. Only the
+            target state has changed.
+          </p>
+          <p>
+            <strong><em>The Control Plane Takes Over</em></strong>
+          </p>
+          <p>After the desired state is updated:</p>
+          <ul>
+            <li>
+              The control plane compares the desired number of instances with
+              the actual number
+            </li>
+            <li>If there is a gap, lifecycle controllers take action</li>
+            <li>New instances are created or excess ones are removed</li>
+          </ul>
+          <p>
+            Auto-scaling does not care how this happens. It only cares that the
+            declared state is eventually reached.
+          </p>
+          <p>
+            <strong><em>How Load Balancers Fit In</em></strong>
+          </p>
+          <p>As instances are added or removed:</p>
+          <ul>
+            <li>New instances are registered as valid backends</li>
+            <li>Unhealthy or removed instances are deregistered</li>
+            <li>
+              Load balancers update their local routing tables automatically At
+              no point does auto-scaling talk to the load balancer directly.
+            </li>
+          </ul>
+          <blockquote>
+            <p>
+              Auto-scaling changes what the system should look like. The control
+              plane handles how the system gets there.
+            </p>
+          </blockquote>
+          <p>
+            This separation is what keeps large systems predictable under load.
+          </p>
+          <pre><code>Service Signals
+(CPU, latency, errors)
+        │
+        ▼
+ Auto-Scaling Logic
+        │
+ updates desired size
+        ▼
+   Control Plane
+(desired service <span class="hljs-keyword">state</span>)
+        │
+ reconciles <span class="hljs-keyword">state</span>
+        ▼
+ Instance Lifecycle
+(create / terminate)
+        │
+ registers backends
+        ▼
+  Load Balancer
+(routes traffic <span class="hljs-keyword">to</span> the replicas of the service)
+</code></pre>
+          <hr />
+          <p><strong>Summary</strong></p>
+          <p>
+            In this post, we explored how auto-scaling fits into the larger
+            system design picture.
+          </p>
+          <p>
+            Auto-scaling operates within the control plane as a feedback loop
+            that observes service-level signals and updates the desired size of
+            a service over time. The control plane then reconciles this desired
+            state by creating or removing instances, while load balancers
+            passively adapt to these changes.
+          </p>
+          <p>
+            Understanding auto-scaling as a state-driven process, rather than a
+            reactive traffic mechanism helps clarify why scalable systems remain
+            stable even as load and failures fluctuate.
+          </p>
+          <hr />
+          <p>
+            <strong><em>What’s Next</em></strong>
+          </p>
+          <p>
+            This post focused on how auto-scaling works. In upcoming posts, I
+            plan to cover:
+          </p>
+          <ul>
+            <li>
+              <strong
+                >How Ingress Controllers Route Traffic to Different Services —
+                and How They Differ from Load Balancers</strong
+              >
+            </li>
+          </ul>
+          <p>
+            Each post builds on the previous one, starting from fundamentals and
+            gradually moving toward more complex system design concepts.
+          </p>
+          <hr />
+          <p>
+            <strong><em>More posts in this series coming soon.</em></strong>
+          </p>
+        </article>
+      </main>
+
+      <footer>
+        <p>© 2026 Learning Cactus</p>
+      </footer>
+    </div>
+  </body>
+</html>
