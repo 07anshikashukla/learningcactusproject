@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      How Ingress Controllers Route Traffic to Different Services and How They
+      Differ from Load Balancers | Learning Cactus
+    </title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../images/logo.png" />
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <a href="../index.html">
+          <img src="../images/logo.png" class="logo" />
+        </a>
+        <h1>Learning Cactus</h1>
+      </header>
+
+      <main>
+        <article>
+          <h2>
+            How Ingress Controllers Route Traffic to Different Services and How
+            They Differ from Load Balancers
+          </h2>
+          <span class="origin-date">January 20, 2026</span>
+
+          <p>
+            In the previous posts, we focused on how systems scale a single
+            service: how load balancers distribute traffic, how the control
+            plane manages server membership, and how auto-scaling adjusts
+            capacity over time. All of these concepts assume a simple model —
+            one entry point serving replicas of the same service.
+          </p>
+          <p>Real systems don’t stop there.</p>
+          <p>
+            As soon as you introduce multiple services — user service, payment
+            service, search service — a new problem appears:
+            <strong
+              >how does incoming traffic get routed to the right service in the
+              first place?</strong
+            >
+            This is where ingress controllers come in, and why they exist as a
+            separate layer rather than an extension of load balancers.
+          </p>
+          <hr />
+          <p><strong>The Core Distinction</strong></p>
+          <p>
+            Before definitions, this is the
+            <strong>most important idea</strong>:
+          </p>
+          <blockquote>
+            <p>
+              <strong
+                >A load balancer distributes traffic within a service.</strong
+              >
+              <br />
+              <strong
+                >An ingress controller routes traffic between services.</strong
+              >
+            </p>
+          </blockquote>
+          <p>They solve different problems at different layers.</p>
+          <p>
+            If we blur this distinction, the architecture quickly becomes hard
+            to reason about.
+          </p>
+          <hr />
+          <p><strong>The Single Service World</strong></p>
+          <p>Up to now, the system looked like this:</p>
+          <pre><code>
+  Client
+    │
+    ▼
+Load Balancer
+    │
+    ▼
+Service Instances
+</code></pre>
+          <ul>
+            <li>All instances run the same service</li>
+            <li>Load balancer only cares about health and availability</li>
+            <li>Routing decisions are trivial: “pick a healthy instance”</li>
+          </ul>
+          <p>This model breaks down as soon as we add more services.</p>
+          <hr />
+          <p><strong>The Multi-Service Problem</strong></p>
+          <p>Imagine a system with multiple services:</p>
+          <ul>
+            <li>/users → user service</li>
+            <li>/payments → payment service</li>
+            <li>/orders → order service</li>
+          </ul>
+          <p>
+            Without an ingress layer, you are forced into one of two bad
+            options:
+          </p>
+
+          <ul>
+            <li>Expose a separate public endpoint per service</li>
+            <li>
+              Add routing logic into each service or load balancer Both scale
+              poorly.
+            </li>
+          </ul>
+          <p>
+            This approach increases operational complexity long before it causes
+            performance issues.
+          </p>
+          <p>
+            This is not a performance problem - it is a
+            <strong>control and complexity problem</strong>
+          </p>
+          <hr />
+          <p><strong>What an Ingress Controller Actually Is</strong></p>
+          <p>At a fundamental level:</p>
+          <blockquote>
+            <p>
+              <strong
+                >An ingress controller is a traffic router that maps external
+                requests to internal services based on rules.</strong
+              >
+            </p>
+          </blockquote>
+          <p>Those rules might look like:</p>
+          <ul>
+            <li>Path-based routing (/users, /payments)</li>
+            <li>Host-based routing (api.example.com, admin.example.com)</li>
+            <li>Header-based routing (advanced cases)</li>
+          </ul>
+          <p>But the key point is this:</p>
+          <blockquote>
+            <p>
+              The ingress controller does not route to individual servers — it
+              routes to services.
+            </p>
+          </blockquote>
+          <hr />
+          <p><strong>Ingress Introduces a Logical Service Layer</strong></p>
+          <p>With ingress, the flow looks like:</p>
+          <pre><code>
+Client
+   │
+   ▼
+Edge Load Balancer → Handles internet-facing concerns
+   │
+   ▼
+Ingress Controller → Routes requests to services
+   │
+   ▼
+Logical Service → Distributes traffic to instances of a service
+   │
+   ▼
+Service<span class="hljs-built_in"> instance </span> → Execute business logic
+</code></pre>
+          <blockquote>
+            <p>
+              Each layer solves a distinct problem. Together, they form a system
+              that is both scalable and easy to reason about.
+            </p>
+          </blockquote>
+          <p>Here’s what’s new:</p>
+          <ul>
+            <li>
+              <strong>Logical service</strong>: an abstraction representing “all
+              instances of a service”
+            </li>
+            <li>Ingress routes requests to a logical service</li>
+            <li>The service abstraction handles instance-level distribution</li>
+          </ul>
+          <p>
+            The logical service performs instance-level distribution by
+            spreading traffic across the instances of a service.
+          </p>
+
+          <p>
+            This is why ingress scales conceptually even as the system grows.
+          </p>
+          <hr />
+          <p><strong>Summary</strong></p>
+          <p>
+            In systems that consist of a single service, load balancers are
+            sufficient. They distribute traffic across identical instances and
+            ensure availability.
+          </p>
+          <p>
+            As systems grow and introduce multiple services, a new problem
+            emerges: deciding <strong>which service</strong> should receive a
+            request. This problem is not about capacity, it is about routing,
+            ownership, and control.
+          </p>
+          <p>
+            Ingress controllers solve this by introducing a dedicated routing
+            layer. They examine incoming requests and map them to logical
+            services, while leaving instance-level distribution to the service
+            abstraction itself.
+          </p>
+          <p>In short:</p>
+          <ul>
+            <li>
+              Load balancers distribute traffic <strong>within</strong> a
+              service
+            </li>
+            <li>
+              Ingress controllers route traffic
+              <strong>between</strong> services
+            </li>
+            <li>Logical services abstract away instance-level complexity</li>
+          </ul>
+          <p>
+            Separating these responsibilities keeps systems scalable, flexible,
+            and easier to reason about as they evolve.
+          </p>
+          <hr />
+          <p>
+            <strong><em>What’s Next</em></strong>
+          </p>
+          <p>
+            This post focused on ingress controller. In upcoming posts, I plan
+            to cover:
+          </p>
+          <ul>
+            <li>
+              <strong>Why Ingress Sits Behind Load Balancers</strong>
+            </li>
+          </ul>
+          <p>
+            Each post builds on the previous one, starting from fundamentals and
+            gradually moving toward more complex system design concepts.
+          </p>
+          <hr />
+          <p>
+            <strong><em>More posts in this series coming soon.</em></strong>
+          </p>
+        </article>
+      </main>
+
+      <footer>
+        <p>© 2026 Learning Cactus</p>
+      </footer>
+    </div>
+  </body>
+</html>
