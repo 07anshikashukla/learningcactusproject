@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Why Authentication and SSO Feel Confusing — And How Everything Actually Connects | Learning Cactus</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../../images/logo.png">
+    <link rel="stylesheet" href="../../css/posts.css" />
+</head>
+
+<body>
+    <div class="page">
+        <header class="site-header">
+            <a href="../../index.html">
+                <img src="../../images/logo.png" alt="Learning Cactus logo" class="logo" />
+            </a>
+            <h1>Learning Cactus</h1>
+        </header>
+
+        <main>
+            <article>
+                <h2>Why Authentication and SSO Feel Confusing — And How Everything Actually Connects</h2>
+                <span class="origin-date">May 13, 2026</span>
+
+                <p>If you have ever felt confused between terms like:</p>
+                <ul>
+                    <li>SSO</li>
+                    <li>OAuth 2.0</li>
+                    <li>OIDC</li>
+                    <li>SAML</li>
+                    <li>Federation</li>
+                    <li>JWT</li>
+                    <li>Sessions</li>
+                    <li>Cookies</li>
+                    <li>Tokens</li>
+                    <li>localStorage</li>
+                </ul>
+                <p>…you are not alone.</p>
+                <p>For many developers, these concepts feel disconnected because they are often learned separately:</p>
+                <ul>
+                    <li>OAuth from API tutorials</li>
+                    <li>JWT from backend authentication examples</li>
+                    <li>SSO from enterprise applications</li>
+                    <li>Cookies from browser discussions</li>
+                    <li>Sessions from server-side frameworks</li>
+                </ul>
+                <p>As a result, authentication starts feeling like a collection of random technologies instead of one
+                    connected system.</p>
+                <p>But the truth is, almost everything in modern authentication is built around a few core ideas.
+                    Once those ideas become clear, all the technologies begin to fit together naturally.</p>
+                <p><strong>Questions Most Developers Have</strong></p>
+                <p>Real Questions Developers Often Have</p>
+                <ul>
+                    <li>What exactly is SSO, and how does it work internally?</li>
+                    <li>How does “Login with Google/GitHub” actually work?</li>
+                    <li>Why can logging into one app automatically log users into another app?</li>
+                    <li>How does Gmail login carry over to YouTube and other Google products?</li>
+                    <li>How does the browser remember logged-in users?</li>
+                    <li>What roles do cookies, sessions, tokens, and localStorage play?</li>
+                    <li>What is the difference between JWT and session-based authentication?</li>
+                    <li>What exactly are OAuth 2.0, OIDC, SAML, and federation?</li>
+                    <li>How are all these concepts connected in real-world systems?</li>
+                </ul>
+                <p>These are not separate topics. They are deeply interconnected parts of the same authentication
+                    ecosystem.</p>
+                <p>This blog will connect all of them together step by step.</p>
+                <p><strong>The Real Goal of Authentication Systems</strong></p>
+                <p>Modern authentication systems try to solve three major problems. Everything else evolves from these.
+                </p>
+                <p>Problem 1 — Authentication </p>
+                <p>Authentication relates to - Who is the user?</p>
+                <p>Examples:</p>
+                <ul>
+                    <li>Logging in with username and password</li>
+                    <li>Login with Google</li>
+                    <li>Login with GitHub</li>
+                    <li>Login with Microsoft</li>
+                </ul>
+                <p>The system must verify identity. After successful authentication, the application knows:</p>
+                <pre><code>This <span class="hljs-keyword">user</span> <span class="hljs-title">is</span> LearningCactus
+</code></pre>
+                <p>Authentication is about identity verification.</p>
+                <p>Problem 2 — Authorization</p>
+                <p>Authorization answers: What is the user allowed to do?</p>
+                <p>Examples:</p>
+                <ul>
+                    <li>Can the user access admin APIs?</li>
+                    <li>Can the user edit documents?</li>
+                    <li>Can the user access billing information?</li>
+                    <li>Can the user read patient records?</li>
+                </ul>
+                <p>A user may be authenticated but still not authorized for certain operations.</p>
+                <p>For example: <code>Authenticated user != Admin user</code></p>
+                <p>Authorization usually involves:</p>
+                <ul>
+                    <li>roles</li>
+                    <li>permissions</li>
+                    <li>scopes</li>
+                    <li>policies</li>
+                </ul>
+                <p>Problem 3 — Session Management</p>
+                <p>After login, another problem appears - How does the application remember the user?</p>
+                <p>Without session management:</p>
+                <ul>
+                    <li>Every page refresh would require login again</li>
+                    <li>Every API call would need credentials again</li>
+                </ul>
+                <p>This is where cookies, sessions, JWT tokens and browser storage start becoming important.</p>
+                <p><strong>Understanding the Main Actors</strong></p>
+                <p>Almost every modern authentication system contains three participants.</p>
+                <ol>
+                    <li>User: The person trying to access the application.</li>
+                    <ul>
+                        <li>A customer</li>
+                        <li>An employee</li>
+                        <li>A developer</li>
+                        <li>
+                            An administrator
+                        </li>
+                    </ul>
+                
+                
+                    <li>The Client Application: The application the user is trying to access.</li>
+                    <p>Examples:</p>
+                    <ul>
+                        <li>Spotify</li>
+                        <li>Slack</li>
+                        <li>YouTube</li>
+                        <li>Notion</li>
+                        <li>Your company portal</li>
+                    </ul>
+                    <p>These applications usually do not want to manage passwords directly.</p>
+                
+                    <li>The Identity Provider (IdP): The system responsible for authenticating users.</li>
+                    <p>Examples:</p>
+                    <ul>
+                        <li>Google</li>
+                        <li>GitHub</li>
+                        <li>Okta</li>
+                        <li>Auth0</li>
+                        <li>Microsoft Azure AD</li>
+                    </ul>
+                    <p>The Identity Provider becomes the trusted authority for verifying users.</p>
+                </ol>
+
+
+                <p><strong>The Most Important Modern Authentication Concept</strong></p>
+                <p>Modern applications increasingly avoid handling passwords themselves. Instead, they delegate
+                    authentication to trusted providers.</p>
+                <p>For example, <code>Spotify trusts Google to verify users.</code></p>
+                <p>This means:</p>
+                <ul>
+                    <li>Spotify does not need your Google password</li>
+                    <li>Spotify simply trusts Google’s verification</li>
+                </ul>
+                <p>This single idea is the foundation behind:</p>
+                <ul>
+                    <li>SSO</li>
+                    <li>OAuth</li>
+                    <li>OIDC</li>
+                    <li>Federation</li>
+                </ul>
+                <p><strong>Understanding Login with Google</strong></p>
+                <p>Consider a user opening Spotify and clicking, Login with Google. At first glance, this looks simple,
+                    but internally, several steps happen.</p>
+                <p>Let us try and understand the step by step flow of what happens behind the scene.</p>
+                <p><strong>Step 1: User Opens Spotify</strong> -
+                    The user is required to authenticate. User selects <code>Login with Google</code> Spotify needs
+                    proof of identity.</p>
+                <p><strong>Step 2: Spotify Redirects User to Google</strong> -
+                    Instead of asking for a password itself, Spotify redirects the user to Google. Why? Because Spotify
+                    trusts Google as an Identity Provider.</p>
+                <p><strong>Step 3: Google Authenticates the User</strong> -
+                    Google checks:</p>
+                <ul>
+                    <li>email</li>
+                    <li>password</li>
+                    <li>multi-factor authentication</li>
+                    <li>existing login session</li>
+                </ul>
+                <p>If authentication succeeds, Google now knows, this is the correct user.</p>
+                <p><strong>Step 4: Google Sends Identity Proof Back</strong> -
+                    Google sends authentication proof back to Spotify.</p>
+                <p>This proof may include:</p>
+                <ul>
+                    <li>identity token</li>
+                    <li>authorization code</li>
+                    <li>access token</li>
+                </ul>
+                <p>depending on the protocol being used.</p>
+                <p><strong>Step 5: Spotify Creates Login State</strong> -
+                    Spotify now trusts the user identity because Google verified it.</p>
+                <p>Spotify creates:</p>
+                <ul>
+                    <li>session</li>
+                    <li>cookie</li>
+                    <li>token</li>
+                </ul>
+                <p>to keep the user logged in.</p>
+                <p><strong>The Core Idea Behind SSO</strong><br>Now consider another application thisismyworld.com on a
+                    browser. You logged in using GitHub.</p>
+                <p>Later you open, another web application thatisyourworld.com the same browser and choose - Login with
+                    GitHub. You are logged in and inside the application thatisyourworld.com, but how?</p>
+                <p>Why doesn&#39;t Github ask again for your credentials?</p>
+                <p><strong>The Browser Already Has a GitHub Session</strong><br>This is the key to understanding SSO.
+                    Earlier, when the user authenticated with GitHub, GitHub stored login state in the browser usually
+                    through cookies.</p>
+                <p>Something like:</p>
+                <pre><code>github<span class="hljs-selector-class">.com</span> cookie:
+session_id = session123
+</code></pre>
+                <p>Later, another application redirects the user to GitHub again. The browser automatically sends
+                    GitHub’s cookies back to GitHub. GitHub sees, <strong><em>this user already authenticated
+                            earlier</em></strong>. So, Github skips the login screen.</p>
+                <p>This creates the SSO experience.</p>
+                <p><strong>What SSO Actually Means</strong></p>
+                <blockquote>
+                    <p>Authenticate once with a trusted Identity Provider and reuse that authenticated state across
+                        multiple applications.</p>
+                </blockquote>
+                <p>Important detail to notice is that applications themselves are not directly sharing passwords or
+                    sessions. Instead, all applications trust the same Identity Provider and the browser carries
+                    authentication state between requests.</p>
+                <p><strong>Why Gmail Login Automatically Works in YouTube</strong><br>This question follows the same
+                    idea or principle. Applications like Gmail, Youtube, Google Drive, Google docs, etc. all trust the
+                    same Identity Provider - <strong>Google Accounts</strong>.</p>
+                <p>Once authenticated Google stores login state in browser cookies. When another Google service opens,
+                    it checks whether a Google authentication already exists.</p>
+                <p>If valid, the user is automatically logged in.</p>
+                <p><strong>Cookies — The Backbone of Browser Authentication</strong><br>Cookies are small pieces of data
+                    stored by browsers.</p>
+                <p>Example:</p>
+                <pre><code><span class="hljs-attr">session_id</span> = session123
+</code></pre>
+                <p>A very important browser behaviour is that it automatically attach cookies to matching domains.
+                    This automatic behavior is one of the most important reasons SSO works smoothly.</p>
+                <p><strong>Why Cookies Matter So Much</strong><br>Cookies are commonly used to store:</p>
+                <ul>
+                    <li>session identifiers</li>
+                    <li>authentication references</li>
+                    <li>refresh tokens</li>
+                    <li>login state</li>
+                </ul>
+                <p>The cookie itself may not contain user data directly. Instead, it could store something like session_id(user session on server). 
+                    The server maps the session identifier to
+                    actual user information.
+                </p>
+                <p><strong>Sessions Explained</strong><br>A session in literal terms means, a server remembering the
+                    authenticated users.</p>
+                <p>As we saw earlier, the browser onlys stores the session identifier but the server stores:</p>
+                <ul>
+                    <li>user identity</li>
+                    <li>expiration</li>
+                    <li>roles</li>
+                    <li>login state</li>
+                </ul>
+                <p>Sessions are commonly stored in </p>
+                <ul>
+                    <li>memory</li>
+                    <li>Redis</li>
+                    <li>databases</li>
+                </ul>
+                <p><strong>Understanding JWT</strong><br>JWT stands for JSON Web Token.</p>
+                <p>A JWT often contains:</p>
+                <p>user ID
+                    roles
+                    expiration
+                    permissions</p>
+                <p>Example structure: xxxxx.yyyyy.zzzzz</p>
+                <p>The token is digitally signed. This allows servers to verify authenticity without storing session
+                    data.</p>
+                <p><strong>localStorage vs Cookies</strong><br>These are frequently confused but they behave very
+                    differently.</p>
+                <p>localStorage is controlled by Javascript, manually accessed and not automatically sent to servers.
+                </p>
+                <p>Example:</p>
+                <pre><code class="lang-Javascript"><span class="hljs-built_in">local</span>Storage.setItem(<span class="hljs-string">"token"</span>, jwt)
+</code></pre>
+                <p>When using localStorage, applications must manually attach tokens to requests.</p>
+                <p>Example:</p>
+                <pre><code class="lang-http"><span class="hljs-symbol">Authorization</span>: <span class="hljs-keyword">Bearer </span>jwt
+</code></pre>
+                <p>Cookies, on the other hand, behave differently. Browsers automatically send cookies to requests.
+                    Exacmple:</p>
+                <pre><code class="lang-http"><span class="hljs-symbol">Cookie:</span> session=abc123
+</code></pre>
+                <p>This automatic behavior is one reason cookies remain heavily used in authentication systems.</p>
+                <p><strong>OAuth 2.0 — The Most Misunderstood Term</strong><br>OAuth is often misunderstood as a login
+                    protocol. But OAuth primarily solves a different problem.</p>
+                <p>OAuth is about delegated authorization.
+                    Consider Canva accessing Google Drive, the user allows Canva to:</p>
+                <ul>
+                    <li>read files</li>
+                    <li>upload files</li>
+                </ul>
+                <p>without giving Canva the Google password. OAuth enables this secure permission delegation.</p>
+                <p>OAuth answers: </p>
+                <pre><code>What can <span class="hljs-keyword">this</span> application access?
+</code></pre>
+                <p>It is fundamentally about: </p>
+                <ul>
+                    <li>permissions</li>
+                    <li>delegated access</li>
+                </ul>
+                <p>not identity itself.</p>
+                <p><strong>Then What is OIDC?</strong><br>OIDC (OpenID Connect) extends OAuth. It adds the
+                    <strong>identity layer</strong>.
+                </p>
+                <p>Now applications can know: </p>
+                <pre><code>who the <span class="hljs-keyword">user</span> <span class="hljs-title">is</span>
+</code></pre>
+                <p>This is why:
+                    “Login with Google”
+                    “Login with GitHub”</p>
+                <p>usually use OIDC.</p>
+                <p><strong>Simplified Difference</strong><br>OAuth:
+                    What resources can the application access?</p>
+                <p>OIDC:
+                    Who is the user?</p>
+                <p><strong>Federation</strong><br>Federation means trusting the external identity systems.
+                    Instead of managing passwords internally, applications trust: </p>
+                <ul>
+                    <li>Google</li>
+                    <li>Microsoft</li>
+                    <li>Okta</li>
+                    <li>Azure AD</li>
+                </ul>
+                <p>Federation reduces: </p>
+                <ul>
+                    <li>password management complexity</li>
+                    <li>security risks</li>
+                    <li>duplicate identity systems</li>
+                </ul>
+                <p><strong>SAML</strong><br>SAML is an older enterprise authentication protocol.</p>
+                <p>Common in: </p>
+                <ul>
+                    <li>banks</li>
+                    <li>healthcare</li>
+                    <li>enterprise corporate systems</li>
+                </ul>
+                <p>Characteristics: </p>
+                <ul>
+                    <li>XML-based</li>
+                    <li>enterprise-focused</li>
+                    <li>older but still widely used</li>
+                </ul>
+                <p>OIDC is generally considered the modern, lighter alternative.</p>
+                <p><strong>How Everything Connects Together</strong><br>At first, all these terms seem independent but
+                    they are actually connected layers. The complete modern authentication flow may look like:</p>
+                <pre><code><span class="hljs-keyword">User</span> <span class="hljs-title">opens</span> application
+        ↓
+Application redirects to Identity Provider
+        ↓
+Identity Provider authenticates <span class="hljs-keyword">user</span>
+        <span class="hljs-title">↓
+Identity</span> Provider returns authentication proof
+        ↓
+Application trusts Identity Provider
+        ↓
+Application creates session/token
+        ↓
+Browser stores authentication state
+        ↓
+<span class="hljs-keyword">User</span> <span class="hljs-title">stays</span> logged <span class="hljs-keyword">in</span>
+</code></pre>
+                <p><strong>The Central Idea That Connects Everything</strong><br>Almost every authentication system can
+                    be understood by answering four questions:</p>
+                <ol>
+                    <li>Who verifies identity?</li>
+                
+                <p>Examples: </p>
+                <ul>
+                    <li>Google</li>
+                    <li>GitHub</li>
+                    <li>
+                        <p>Okta</p>
+                    </li>
+                </ul>
+                    <li>
+                        How is proof transferred?
+                    </li>
+                <p>Examples: </p>
+                <ul>
+                    <li>cookies</li>
+                    <li>JWT</li>
+                    <li>authorization codes</li>
+                    <li>tokens</li>
+                </ul>
+                    <li>How is login remembered?</li>
+               
+                <p>Examples: </p>
+                <ul>
+                    <li>sessions</li>
+                    <li>cookies</li>
+                    <li>
+                        refresh tokens
+                    </li>
+                </ul>
+                    <li>
+                        <p>Who trusts whom?</p>
+                    </li>
+                
+                <p>Examples: </p>
+                <ul>
+                    <li>Spotify trusts Google</li>
+                    <li>Company apps trust Okta</li>
+                    <li>Enterprise systems trust Azure AD</li>
+                </ul>
+            </ol>
+
+                <p>Today, many systems commonly use: </p>
+                <pre><code>OIDC + OAuth2 + <span class="hljs-keyword">JWT </span>+ Cookies
+</code></pre>
+                <p>Examples: </p>
+                <ul>
+                    <li>Google Login</li>
+                    <li>GitHub Login</li>
+                    <li>Auth0</li>
+                    <li>AWS Cognito</li>
+                    <li>Okta</li>
+                </ul>
+                <p><strong>Final Mental Model</strong><br>Authentication becomes much easier when viewed like this:</p>
+                <pre><code>Identity Provider verifies users
+Applications trust Identity Providers
+Browsers carry authentication <span class="hljs-keyword">state</span>
+Protocols define communication rules
+Tokens/cookies preserve login <span class="hljs-keyword">state</span>
+</code></pre>
+                <p>Once this model becomes clear, terms like: </p>
+                <ul>
+                    <li>OAuth</li>
+                    <li>OIDC</li>
+                    <li>SSO</li>
+                    <li>JWT</li>
+                    <li>SAML</li>
+                    <li>Federation</li>
+                </ul>
+                <p>stop feeling like isolated concepts and begin feeling like connected solutions to the same
+                    authentication problems.</p>
+
+
+                <p>
+                    <strong><em>More posts in this series coming soon.</em></strong>
+                </p>
+            </article>
+        </main>
+
+        <footer>
+            <p>© 2026 Learning Cactus</p>
+        </footer>
+    </div>
+</body>
+
+</html>

@@ -2,72 +2,89 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Learning Cactus</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="images/logo.png">
-    <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Learning Cactus | Learn Tech Step by Step</title>
+  <meta name="description"
+    content="Learn AWS, Node.js, Angular, and System Design with simple, structured tutorials." />
+
+  <!-- SEO -->
+  <meta name="keywords" content="AWS, Node.js, Angular, System Design, tutorials, backend, frontend" />
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body>
 
-    <div class="page">
-
-
-        <header class="site-header">
-            <img src="images/logo.png" alt="Learning Cactus logo" class="logo" />
-            <h1>Learning Cactus</h1>
-        </header>
-
-        <main>
-            <section class="intro">
-                <p>
-                    This blog documents my ongoing journey of learning core system design concepts. Each post represents
-                    my understanding of a topic at the time of writing, built from first principles and refined through
-                    hands-on exploration. </p>
-
-                <p>The content here grows alongside my understanding. As I continue learning, I’ll add new posts and
-                    revisit ideas, gradually moving from fundamentals to cloud-specific implementations and real-world
-                    architectures.</p>
-
-
-                <p>This is the first post in a series where I document my understanding of core system design concepts
-                    as I learn them, focusing on fundamentals before exploring cloud-specific implementations.</p>
-                </p>
-            </section>
-
-            <section class="posts">
-                <h2>Posts</h2>
-                <ul>
-                    <li>
-                        <a href="posts/load-balancers.html">
-                            How Load Balancers Really Work (Without Cloud Buzzwords)
-                        </a>
-                    </li>
-                    <li>
-                        <a href="posts/control-planes.html">
-                            What Is a Control Plane and Why Load Balancers Don’t Discover Servers
-                        </a>
-                    </li>
-                    <li>
-                        <a href="posts/auto-scaling.html">
-                            How Auto Scaling Fits into the Bigger Picture
-                        </a>
-                    </li>
-                    <li>
-                        <a href="posts/ingress-controller.html">
-                            How Ingress Controllers Route Traffic to Different Services and How
-            They Differ from Load Balancers
-                        </a>
-                    </li>
-                </ul>
-            </section>
-        </main>
-
-        <footer>
-            <p>© 2026 Learning Cactus</p>
-        </footer>
+  <header class="header">
+    <div class="brand">
+      <img src="images/logo.png" sizes="32x32" alt="Learning Cactus logo" class="site-logo" />
+      <h1>Learning Cactus</h1>
     </div>
+    <p>Learn tech, one small step at a time</p>
+  </header>
+
+  <main>
+
+    <section class="categories">
+      <h2>Explore Topics</h2>
+
+      <div class="grid">
+
+        <article class="card">
+          <h3>AWS</h3>
+          <p>Cloud fundamentals, architecture & scaling</p>
+          <a href="posts/aws/aws.html">Explore →</a>
+        </article>
+
+        <article class="card">
+          <h3>Node.js</h3>
+          <p>Backend, performance, APIs & scaling</p>
+          <a href="posts/nodejs/nodejs.html">Explore →</a>
+        </article>
+
+        <article class="card">
+          <h3>Angular</h3>
+          <p>Frontend architecture & best practices</p>
+          <a href="posts/angular/angular.html">Explore →</a>
+        </article>
+
+        <article class="card">
+          <h3>System Design</h3>
+          <p>Scalable architecture & real-world systems</p>
+          <a href="posts/system-design/system-design.html">Explore →</a>
+        </article>
+
+        <article class="card">
+          <h3>AI & LLMs</h3>
+          <p>Learn RAG, LLMs & AI applications</p>
+          <a href="posts/genAI/ai.html">Explore →</a>
+        </article>
+
+        <article class="card">
+          <h3>Miscellaneous</h3>
+          <p>Various topics and tutorials</p>
+          <a href="posts/miscellaneous/miscellaneous.html">Explore →</a>
+        </article>
+
+        <!-- <article class="card">
+          <h3>DevOps</h3>
+          <p>CI/CD, Docker, Kubernetes & deployment</p>
+          <a href="/devops.html">Explore →</a>
+        </article> -->
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>© 2026 Learning Cactus</p>
+  </footer>
 
 </body>
 
